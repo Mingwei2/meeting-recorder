@@ -50,7 +50,8 @@ struct PopoverView: View {
                 Text(summary)
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(1)
+                    .help(summary)
             }
 
             footer
@@ -74,170 +75,190 @@ struct PopoverView: View {
     }
 
     private var audioSourceCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("采集哪些应用")
-                .font(.system(size: 13, weight: .semibold))
-            Text("系统音频仍走屏幕录制。只有勾选的应用窗口会显示正在共享；菜单栏的录制指示可能仍会亮。选了浏览器会包含它的全部窗口和标签页。")
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("采集应用")
+                    .font(.system(size: 13, weight: .semibold))
+                Spacer()
+                Button(preferences.isRefreshing ? "刷新中…" : "刷新") {
+                    preferences.refreshRunningApplications()
+                }
+                .controlSize(.small)
+                .disabled(session.phase != .idle || preferences.isRefreshing)
+            }
 
             Toggle(isOn: Binding(
                 get: { preferences.captureAllApplications },
                 set: { preferences.setCaptureAllApplications($0) }
             )) {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("全部应用")
-                        .font(.system(size: 13, weight: .medium))
-                    Text("打开后采集除本应用以外的所有应用，各窗口会重新显示正在共享。默认关闭。")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                Text("全部应用")
+                    .font(.system(size: 13, weight: .medium))
             }
             .toggleStyle(.switch)
             .disabled(session.phase != .idle)
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 6) {
-                    ForEach(preferences.rows) { row in
-                        Toggle(isOn: Binding(
-                            get: { preferences.isSelected(row.bundleIdentifier) },
-                            set: { preferences.setSelected(row.bundleIdentifier, isOn: $0) }
-                        )) {
-                            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                                Text(row.title)
-                                    .font(.system(size: 12))
-                                    .lineLimit(1)
-                                Spacer(minLength: 4)
-                                Text(row.running ? "运行中" : "未打开")
-                                    .font(.system(size: 10))
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .toggleStyle(.checkbox)
-                        .disabled(session.phase != .idle || preferences.captureAllApplications)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
-            }
-            .frame(height: sourceListHeight)
-
             if preferences.captureAllApplications {
-                Text("当前会采集全部应用。下面的勾选会保留，关掉「全部应用」后再生效。")
+                Text("已采集全部应用（勾选会保留）")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            } else if preferences.selectedBundleIDs.isEmpty {
-                Text("至少勾选一个应用后才能开始录音。")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color(nsColor: .systemOrange))
-                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                ScrollView(.vertical) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        ForEach(Array(preferences.groupedRows.enumerated()), id: \.offset) { group in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(group.element.section.rawValue)
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundStyle(.secondary)
+                                ForEach(group.element.rows) { row in
+                                    audioSourceRow(row)
+                                }
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.trailing, 4)
+                }
+                .frame(height: 180)
+
+                if preferences.selectedBundleIDs.isEmpty {
+                    Text("至少勾选一个应用")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color(nsColor: .systemOrange))
+                } else if !preferences.selectedButNotRunningNames.isEmpty {
+                    Text("已选未运行：\(preferences.selectedButNotRunningNames.joined(separator: "、"))")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                        .help(preferences.selectedButNotRunningNames.joined(separator: "、"))
+                }
+
+                if preferences.groupedRows.isEmpty {
+                    Text("没有检测到可采集的运行中应用，点「刷新」再试")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
             }
 
-            if let listNote = preferences.listNote {
+            if let listNote = preferences.listNote, !listNote.isEmpty {
                 Text(listNote)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            HStack {
-                Button(preferences.isRefreshing ? "正在读取…" : "刷新正在运行的应用") {
-                    preferences.refreshRunningApplications()
-                }
-                .disabled(preferences.isRefreshing)
-                .controlSize(.small)
-                Spacer()
+                    .lineLimit(1)
+                    .help(listNote)
             }
         }
-        .padding(10)
-        .background(Color(nsColor: .quaternaryLabelColor).opacity(0.25), in: RoundedRectangle(cornerRadius: 8))
+        .padding(12)
+        .background(Color(nsColor: .quaternaryLabelColor).opacity(0.25), in: RoundedRectangle(cornerRadius: 10))
     }
 
-    private var sourceListHeight: CGFloat {
-        let rows = CGFloat(max(preferences.rows.count, 1))
-        return min(140, rows * 28)
+    private func audioSourceRow(_ row: AudioSourceRow) -> some View {
+        Toggle(isOn: Binding(
+            get: { preferences.isSelected(row.bundleIdentifier) },
+            set: { preferences.setSelected(row.bundleIdentifier, isOn: $0) }
+        )) {
+            Text(row.title)
+                .font(.system(size: 12))
+                .lineLimit(1)
+        }
+        .toggleStyle(.checkbox)
+        .disabled(session.phase != .idle || preferences.captureAllApplications)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text("会议录音")
                 .font(.system(size: 18, weight: .semibold))
-            Text("麦克风 + 系统音频，只写本地 m4a")
+            Text("麦克风 + 系统音频 · 本地 m4a")
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
         }
     }
 
     private var permissionCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(permissions.isReady ? "权限已就绪" : "需要两项权限")
-                .font(.system(size: 13, weight: .semibold))
-            PermissionLine(
-                title: "麦克风",
-                detail: "录下你自己的声音",
-                granted: permissions.microphone == .granted,
-                actionTitle: permissions.microphone == .denied ? "打开设置" : "允许",
-                action: {
-                    if permissions.microphone == .denied {
-                        permissions.openSettings(.microphone)
-                    } else {
-                        Task { await permissions.requestMicrophone() }
-                    }
+        Group {
+            if permissions.isReady {
+                HStack {
+                    Text("权限已就绪")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("设置") { permissions.openSettings(.screen) }
+                        .buttonStyle(.link)
+                        .controlSize(.small)
                 }
-            )
-            PermissionLine(
-                title: "屏幕录制",
-                detail: "采集所选应用的系统音频，不保存画面",
-                granted: permissions.screenGranted,
-                actionTitle: permissions.screenGranted ? "已允许" : "允许",
-                action: {
-                    if permissions.screenGranted {
-                        permissions.refresh()
-                    } else {
-                        _ = permissions.requestScreenCapture()
-                        if !permissions.screenGranted {
-                            permissions.openSettings(.screen)
+            } else {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("需要权限")
+                        .font(.system(size: 13, weight: .semibold))
+                    PermissionLine(
+                        title: "麦克风",
+                        detail: "录制你的声音",
+                        granted: permissions.microphone == .granted,
+                        actionTitle: permissions.microphone == .denied ? "打开设置" : "允许",
+                        action: {
+                            if permissions.microphone == .denied {
+                                permissions.openSettings(.microphone)
+                            } else {
+                                Task { await permissions.requestMicrophone() }
+                            }
                         }
+                    )
+                    PermissionLine(
+                        title: "屏幕录制",
+                        detail: "采集应用声音，不保存画面",
+                        granted: permissions.screenGranted,
+                        actionTitle: permissions.screenGranted ? "已允许" : "允许",
+                        action: {
+                            if permissions.screenGranted {
+                                permissions.refresh()
+                            } else {
+                                _ = permissions.requestScreenCapture()
+                                if !permissions.screenGranted {
+                                    permissions.openSettings(.screen)
+                                }
+                            }
+                        }
+                    )
+                    if !permissions.screenGranted {
+                        Text("允许后请退出并重开应用；设置中可能显示为「屏幕与系统音频录制」。")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    HStack {
+                        Button("重新检查") { permissions.refresh() }
+                            .controlSize(.small)
+                        Spacer()
+                        Button("系统设置") {
+                            permissions.openSettings(permissions.screenGranted ? .microphone : .screen)
+                        }
+                        .controlSize(.small)
                     }
                 }
-            )
-            if !permissions.screenGranted {
-                Text("允许屏幕录制后，点「退出」再重新打开。macOS 要等进程重启才生效。系统设置里也可能显示为「屏幕与系统音频录制」。")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            HStack {
-                Button("重新检查") { permissions.refresh() }
-                    .controlSize(.small)
-                Spacer()
-                Button("打开系统设置") { permissions.openSettings(permissions.screenGranted ? .microphone : .screen) }
-                    .controlSize(.small)
+                .padding(12)
+                .background(
+                    Color(nsColor: .quaternaryLabelColor).opacity(0.25),
+                    in: RoundedRectangle(cornerRadius: 10)
+                )
             }
         }
-        .padding(10)
-        .background(Color(nsColor: .quaternaryLabelColor).opacity(0.25), in: RoundedRectangle(cornerRadius: 8))
     }
 
     private var footer: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        HStack(spacing: 14) {
             Button("打开录音文件夹") {
                 RecordingPaths.openFolder()
             }
             .buttonStyle(.link)
             if let lastFile = session.lastFile {
-                Button("在访达中显示最近一次") {
+                Button("显示最近") {
                     RecordingPaths.reveal(lastFile)
                 }
                 .buttonStyle(.link)
             }
-            Text("系统音频来自屏幕录制权限，不用安装 BlackHole。默认勾选微信和企业微信。打开「全部应用」后，各窗口都会显示正在共享。文件在「文稿 / MeetingRecordings」。")
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Divider()
+            Spacer(minLength: 8)
             Button("退出") {
                 NSApp.terminate(nil)
             }

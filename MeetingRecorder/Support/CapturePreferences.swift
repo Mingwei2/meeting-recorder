@@ -78,6 +78,12 @@ struct AudioSourceRow: Identifiable, Equatable {
     var id: String { bundleIdentifier }
 }
 
+enum AudioSourceSection: String, CaseIterable {
+    case selected = "已选"
+    case favorites = "常用"
+    case other = "其他"
+}
+
 /// Menu-bar selection for which apps' system audio to capture.
 ///
 /// Missing `selectedBundleIDs` means the WeChat defaults. A stored empty array
@@ -92,6 +98,8 @@ final class CapturePreferences: ObservableObject {
     static let catalog: [CatalogApp] = [
         CatalogApp(bundleIdentifier: "com.tencent.xinWeChat", title: "微信"),
         CatalogApp(bundleIdentifier: "com.tencent.WeWorkMac", title: "企业微信"),
+        CatalogApp(bundleIdentifier: "com.electron.lark", title: "飞书"),
+        CatalogApp(bundleIdentifier: "com.bytedance.macos.feishu", title: "飞书"),
         CatalogApp(bundleIdentifier: "us.zoom.xos", title: "Zoom"),
         CatalogApp(bundleIdentifier: "com.microsoft.teams2", title: "Microsoft Teams"),
         CatalogApp(bundleIdentifier: "com.microsoft.teams", title: "Microsoft Teams（经典版）"),
@@ -99,6 +107,49 @@ final class CapturePreferences: ObservableObject {
         CatalogApp(bundleIdentifier: "com.apple.Safari", title: "Safari"),
         CatalogApp(bundleIdentifier: "com.microsoft.edgemac", title: "Microsoft Edge")
     ]
+
+    /// Running apps only, grouped for the picker. Selected-but-not-running apps
+    /// stay in `selectedBundleIDs` for start refusal / skip logic, but do not
+    /// take a list row.
+    var groupedRows: [(section: AudioSourceSection, rows: [AudioSourceRow])] {
+        let catalogIDs = Set(Self.catalog.map { $0.bundleIdentifier })
+        let runningRows = rows.filter(\.running)
+        let selectedRows = runningRows
+            .filter { selectedBundleIDs.contains($0.bundleIdentifier) }
+            .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+        let favoriteRows = Self.catalog.compactMap { item -> AudioSourceRow? in
+            guard !selectedBundleIDs.contains(item.bundleIdentifier) else { return nil }
+            return runningRows.first { $0.bundleIdentifier == item.bundleIdentifier }
+        }
+        let otherRows = runningRows
+            .filter {
+                !selectedBundleIDs.contains($0.bundleIdentifier) &&
+                !catalogIDs.contains($0.bundleIdentifier)
+            }
+            .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+
+        var groups: [(section: AudioSourceSection, rows: [AudioSourceRow])] = []
+        if !selectedRows.isEmpty {
+            groups.append((section: .selected, rows: selectedRows))
+        }
+        if !favoriteRows.isEmpty {
+            groups.append((section: .favorites, rows: favoriteRows))
+        }
+        if !otherRows.isEmpty {
+            groups.append((section: .other, rows: otherRows))
+        }
+        return groups
+    }
+
+    /// Selected apps that are not currently shareable / running — kept for start
+    /// logic, surfaced as a one-line hint rather than list rows.
+    var selectedButNotRunningNames: [String] {
+        let runningIDs = Set(rows.filter(\.running).map(\.bundleIdentifier))
+        return selectedBundleIDs
+            .filter { !runningIDs.contains($0) }
+            .map { displayName(for: $0) }
+            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+    }
 
     static let defaultBundleIDs = ["com.tencent.xinWeChat", "com.tencent.WeWorkMac"]
 
