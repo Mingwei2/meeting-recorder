@@ -5,6 +5,7 @@ import Foundation
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var session: MeetingSession?
     private var permissions: PermissionCenter?
+    private var preferences: CapturePreferences?
     private var statusBar: StatusBarController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -12,9 +13,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         try? RecordingPaths.makeDirectory()
 
         let permissions = PermissionCenter()
-        let session = MeetingSession(permissions: permissions)
-        let statusBar = StatusBarController(session: session, permissions: permissions)
+        let preferences = CapturePreferences()
+        let session = MeetingSession(permissions: permissions, preferences: preferences)
+        let statusBar = StatusBarController(session: session, permissions: permissions, preferences: preferences)
         self.permissions = permissions
+        self.preferences = preferences
         self.session = session
         self.statusBar = statusBar
         statusBar.install()

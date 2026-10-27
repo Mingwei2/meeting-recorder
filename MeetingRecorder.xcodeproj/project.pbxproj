@@ -21,6 +21,7 @@
 		B1000000000000000000001C /* PermissionCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001C /* PermissionCenter.swift */; };
 		B1000000000000000000001D /* RecordingPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001D /* RecordingPaths.swift */; };
 		B1000000000000000000001E /* RecorderError.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001E /* RecorderError.swift */; };
+		B10000000000000000000022 /* CapturePreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* CapturePreferences.swift */; };
 		B10000000000000000000020 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000020 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -39,6 +40,7 @@
 		A1000000000000000000001C /* PermissionCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionCenter.swift; sourceTree = "<group>"; };
 		A1000000000000000000001D /* RecordingPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingPaths.swift; sourceTree = "<group>"; };
 		A1000000000000000000001E /* RecorderError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecorderError.swift; sourceTree = "<group>"; };
+		A10000000000000000000022 /* CapturePreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturePreferences.swift; sourceTree = "<group>"; };
 		A1000000000000000000001F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A10000000000000000000020 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A10000000000000000000021 /* MeetingRecorder.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MeetingRecorder.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -114,6 +116,7 @@
 			children = (
 				A1000000000000000000001D /* RecordingPaths.swift */,
 				A1000000000000000000001E /* RecorderError.swift */,
+				A10000000000000000000022 /* CapturePreferences.swift */,
 			);
 			path = Support;
 			sourceTree = "<group>";
@@ -211,6 +214,7 @@
 				B1000000000000000000001C /* PermissionCenter.swift in Sources */,
 				B1000000000000000000001D /* RecordingPaths.swift in Sources */,
 				B1000000000000000000001E /* RecorderError.swift in Sources */,
+				B10000000000000000000022 /* CapturePreferences.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

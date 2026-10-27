@@ -53,6 +53,16 @@ grep -q "打开录音文件夹" MeetingRecorder/UI/PopoverView.swift
 grep -q "capturesAudio" MeetingRecorder/Recorder/SystemAudioCapture.swift
 grep -q "excludesCurrentProcessAudio" MeetingRecorder/Recorder/SystemAudioCapture.swift
 grep -q "CMTime(value: 1, timescale: 1)" MeetingRecorder/Recorder/SystemAudioCapture.swift
+grep -q "noAudioAppsSelected" MeetingRecorder/Support/RecorderError.swift
+grep -q "全部应用" MeetingRecorder/UI/PopoverView.swift
+grep -q "com.tencent.xinWeChat" MeetingRecorder/Support/CapturePreferences.swift
+grep -q "com.tencent.WeWorkMac" MeetingRecorder/Support/CapturePreferences.swift
+grep -q "systemAudio.selectedBundleIDs" MeetingRecorder/Support/CapturePreferences.swift
+grep -q "SCContentFilter(display: display, including:" MeetingRecorder/Recorder/SystemAudioCapture.swift
+if grep -q "CMTimeScale.max" MeetingRecorder/Recorder/SystemAudioCapture.swift; then
+  echo "SystemAudioCapture must not use CMTimeScale.max" >&2
+  exit 1
+fi
 grep -q "setVoiceProcessingEnabled" MeetingRecorder/Recorder/MicrophoneCapture.swift
 grep -q "macos-latest" .github/workflows/build-macos-app.yml
 grep -q "MeetingRecordings" MeetingRecorder/Support/RecordingPaths.swift

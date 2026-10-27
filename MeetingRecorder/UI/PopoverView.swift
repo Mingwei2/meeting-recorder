@@ -5,6 +5,7 @@ import SwiftUI
 struct PopoverView: View {
     @ObservedObject var session: MeetingSession
     @ObservedObject var permissions: PermissionCenter
+    @ObservedObject var preferences: CapturePreferences
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -12,11 +13,11 @@ struct PopoverView: View {
             if let banner = session.banner {
                 Text(banner)
                     .font(.system(size: 12))
-                    .foregroundStyle(Color(nsColor: .systemRed))
+                    .foregroundStyle(bannerColor)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(10)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(nsColor: .systemRed).opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+                    .background(bannerColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
             }
             if session.phase == .recording || session.phase == .starting {
                 Text(session.elapsedText)
@@ -42,6 +43,7 @@ struct PopoverView: View {
                 }
             }
 
+            audioSourceCard
             permissionCard
 
             if let summary = session.savedSummary {
@@ -54,9 +56,108 @@ struct PopoverView: View {
             footer
         }
         .padding(16)
-        .frame(width: 320, alignment: .leading)
+        .frame(width: 340, alignment: .leading)
         .fixedSize(horizontal: true, vertical: true)
         .background(Color(nsColor: .windowBackgroundColor))
+        .onAppear {
+            preferences.refreshRunningApplications()
+        }
+    }
+
+    private var bannerColor: Color {
+        if let banner = session.banner,
+           banner.contains("已跳过"),
+           !banner.contains("还没有收到系统音频") {
+            return Color(nsColor: .systemOrange)
+        }
+        return Color(nsColor: .systemRed)
+    }
+
+    private var audioSourceCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("采集哪些应用")
+                .font(.system(size: 13, weight: .semibold))
+            Text("系统音频仍走屏幕录制。只有勾选的应用窗口会显示正在共享；菜单栏的录制指示可能仍会亮。选了浏览器会包含它的全部窗口和标签页。")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Toggle(isOn: Binding(
+                get: { preferences.captureAllApplications },
+                set: { preferences.setCaptureAllApplications($0) }
+            )) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("全部应用")
+                        .font(.system(size: 13, weight: .medium))
+                    Text("打开后采集除本应用以外的所有应用，各窗口会重新显示正在共享。默认关闭。")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .toggleStyle(.switch)
+            .disabled(session.phase != .idle)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(preferences.rows) { row in
+                        Toggle(isOn: Binding(
+                            get: { preferences.isSelected(row.bundleIdentifier) },
+                            set: { preferences.setSelected(row.bundleIdentifier, isOn: $0) }
+                        )) {
+                            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                Text(row.title)
+                                    .font(.system(size: 12))
+                                    .lineLimit(1)
+                                Spacer(minLength: 4)
+                                Text(row.running ? "运行中" : "未打开")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .toggleStyle(.checkbox)
+                        .disabled(session.phase != .idle || preferences.captureAllApplications)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            }
+            .frame(height: sourceListHeight)
+
+            if preferences.captureAllApplications {
+                Text("当前会采集全部应用。下面的勾选会保留，关掉「全部应用」后再生效。")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else if preferences.selectedBundleIDs.isEmpty {
+                Text("至少勾选一个应用后才能开始录音。")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color(nsColor: .systemOrange))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if let listNote = preferences.listNote {
+                Text(listNote)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            HStack {
+                Button(preferences.isRefreshing ? "正在读取…" : "刷新正在运行的应用") {
+                    preferences.refreshRunningApplications()
+                }
+                .disabled(preferences.isRefreshing)
+                .controlSize(.small)
+                Spacer()
+            }
+        }
+        .padding(10)
+        .background(Color(nsColor: .quaternaryLabelColor).opacity(0.25), in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var sourceListHeight: CGFloat {
+        let rows = CGFloat(max(preferences.rows.count, 1))
+        return min(140, rows * 28)
     }
 
     private var header: some View {
@@ -88,7 +189,7 @@ struct PopoverView: View {
             )
             PermissionLine(
                 title: "屏幕录制",
-                detail: "采集系统音频，不保存画面",
+                detail: "采集所选应用的系统音频，不保存画面",
                 granted: permissions.screenGranted,
                 actionTitle: permissions.screenGranted ? "已允许" : "允许",
                 action: {
@@ -132,7 +233,7 @@ struct PopoverView: View {
                 }
                 .buttonStyle(.link)
             }
-            Text("系统音频来自屏幕录制权限，不用安装 BlackHole。文件在「文稿 / MeetingRecordings」。")
+            Text("系统音频来自屏幕录制权限，不用安装 BlackHole。默认勾选微信和企业微信。打开「全部应用」后，各窗口都会显示正在共享。文件在「文稿 / MeetingRecordings」。")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

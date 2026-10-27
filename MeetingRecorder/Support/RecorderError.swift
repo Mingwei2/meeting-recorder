@@ -6,6 +6,8 @@ enum RecorderError: Error {
     case screenCaptureDenied
     case noDisplay
     case noMicrophoneDevice
+    case noAudioAppsSelected
+    case audioAppsUnavailable(String)
     case systemAudioFailed(String)
     case writerFailed(String)
     case interrupted(String)
@@ -20,6 +22,13 @@ enum RecorderError: Error {
             return "没有找到可用的显示器，系统音频无法开始。"
         case .noMicrophoneDevice:
             return "没有可用的麦克风输入。请确认麦克风已连接，并且没有被其他应用独占。"
+        case .noAudioAppsSelected:
+            return "还没有选择要采集系统音频的应用，录音没有开始。请勾选微信或其他应用；若要采集除本应用以外的所有应用，请打开「全部应用」。"
+        case .audioAppsUnavailable(let names):
+            if names.isEmpty {
+                return "所选应用都还没在运行，或系统还不能共享它们的窗口。请先打开要录音的应用，再开始录音。"
+            }
+            return "所选应用都还没在运行，或系统还不能共享它们的窗口：\(names)。请先打开要录音的应用，再开始录音。"
         case .systemAudioFailed(let detail):
             return "系统音频没有启动：\(detail)"
         case .writerFailed(let detail):
@@ -27,6 +36,11 @@ enum RecorderError: Error {
         case .interrupted(let detail):
             return "录音中断，已尽量保存已录内容。\(detail)"
         }
+    }
+
+    static func skippedApplicationsNotice(_ names: [String]) -> String {
+        let list = names.joined(separator: "、")
+        return "这些应用当前没有在运行或还不能共享，已跳过：\(list)。其余已选应用会继续录音。"
     }
 
     static func message(from error: Error) -> String {
