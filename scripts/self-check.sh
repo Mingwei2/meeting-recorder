@@ -59,7 +59,8 @@ grep -q "com.tencent.xinWeChat" MeetingRecorder/Support/CapturePreferences.swift
 grep -q "com.tencent.WeWorkMac" MeetingRecorder/Support/CapturePreferences.swift
 grep -q "systemAudio.selectedBundleIDs" MeetingRecorder/Support/CapturePreferences.swift
 grep -q "SCContentFilter(display: display, including:" MeetingRecorder/Recorder/SystemAudioCapture.swift
-if grep -q "CMTimeScale.max" MeetingRecorder/Recorder/SystemAudioCapture.swift; then
+# The warning comment names CMTimeScale.max on purpose. Fail only if a code line uses it.
+if grep -n "CMTimeScale.max" MeetingRecorder/Recorder/SystemAudioCapture.swift | grep -v -E '^[^:]+:[[:space:]]*///?' ; then
   echo "SystemAudioCapture must not use CMTimeScale.max" >&2
   exit 1
 fi
