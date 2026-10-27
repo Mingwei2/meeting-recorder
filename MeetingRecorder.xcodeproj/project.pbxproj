@@ -1,0 +1,384 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		B10000000000000000000011 /* AppMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000011 /* AppMain.swift */; };
+		B10000000000000000000012 /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000012 /* StatusBarController.swift */; };
+		B10000000000000000000013 /* PopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000013 /* PopoverView.swift */; };
+		B10000000000000000000014 /* MeetingSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000014 /* MeetingSession.swift */; };
+		B10000000000000000000015 /* RecordingEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000015 /* RecordingEngine.swift */; };
+		B10000000000000000000016 /* SystemAudioCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000016 /* SystemAudioCapture.swift */; };
+		B10000000000000000000017 /* MicrophoneCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000017 /* MicrophoneCapture.swift */; };
+		B10000000000000000000018 /* PCMRingBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000018 /* PCMRingBuffer.swift */; };
+		B10000000000000000000019 /* PCMConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000019 /* PCMConverter.swift */; };
+		B1000000000000000000001A /* M4AWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001A /* M4AWriter.swift */; };
+		B1000000000000000000001B /* AudioMix.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001B /* AudioMix.swift */; };
+		B1000000000000000000001C /* PermissionCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001C /* PermissionCenter.swift */; };
+		B1000000000000000000001D /* RecordingPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001D /* RecordingPaths.swift */; };
+		B1000000000000000000001E /* RecorderError.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001E /* RecorderError.swift */; };
+		B10000000000000000000020 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000020 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A10000000000000000000011 /* AppMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMain.swift; sourceTree = "<group>"; };
+		A10000000000000000000012 /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
+		A10000000000000000000013 /* PopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverView.swift; sourceTree = "<group>"; };
+		A10000000000000000000014 /* MeetingSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingSession.swift; sourceTree = "<group>"; };
+		A10000000000000000000015 /* RecordingEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingEngine.swift; sourceTree = "<group>"; };
+		A10000000000000000000016 /* SystemAudioCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemAudioCapture.swift; sourceTree = "<group>"; };
+		A10000000000000000000017 /* MicrophoneCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicrophoneCapture.swift; sourceTree = "<group>"; };
+		A10000000000000000000018 /* PCMRingBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PCMRingBuffer.swift; sourceTree = "<group>"; };
+		A10000000000000000000019 /* PCMConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PCMConverter.swift; sourceTree = "<group>"; };
+		A1000000000000000000001A /* M4AWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M4AWriter.swift; sourceTree = "<group>"; };
+		A1000000000000000000001B /* AudioMix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioMix.swift; sourceTree = "<group>"; };
+		A1000000000000000000001C /* PermissionCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionCenter.swift; sourceTree = "<group>"; };
+		A1000000000000000000001D /* RecordingPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingPaths.swift; sourceTree = "<group>"; };
+		A1000000000000000000001E /* RecorderError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecorderError.swift; sourceTree = "<group>"; };
+		A1000000000000000000001F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A10000000000000000000020 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A10000000000000000000021 /* MeetingRecorder.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MeetingRecorder.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D10000000000000000000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		C10000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				C10000000000000000000002 /* MeetingRecorder */,
+				C10000000000000000000007 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		C10000000000000000000002 /* MeetingRecorder */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000011 /* AppMain.swift */,
+				A10000000000000000000012 /* StatusBarController.swift */,
+				C10000000000000000000003 /* UI */,
+				C10000000000000000000004 /* Recorder */,
+				C10000000000000000000005 /* Permissions */,
+				C10000000000000000000006 /* Support */,
+				A1000000000000000000001F /* Info.plist */,
+				A10000000000000000000020 /* Assets.xcassets */,
+			);
+			path = MeetingRecorder;
+			sourceTree = "<group>";
+		};
+		C10000000000000000000003 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000013 /* PopoverView.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		C10000000000000000000004 /* Recorder */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000014 /* MeetingSession.swift */,
+				A10000000000000000000015 /* RecordingEngine.swift */,
+				A10000000000000000000016 /* SystemAudioCapture.swift */,
+				A10000000000000000000017 /* MicrophoneCapture.swift */,
+				A10000000000000000000018 /* PCMRingBuffer.swift */,
+				A10000000000000000000019 /* PCMConverter.swift */,
+				A1000000000000000000001A /* M4AWriter.swift */,
+				A1000000000000000000001B /* AudioMix.swift */,
+			);
+			path = Recorder;
+			sourceTree = "<group>";
+		};
+		C10000000000000000000005 /* Permissions */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000000000000000001C /* PermissionCenter.swift */,
+			);
+			path = Permissions;
+			sourceTree = "<group>";
+		};
+		C10000000000000000000006 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000000000000000001D /* RecordingPaths.swift */,
+				A1000000000000000000001E /* RecorderError.swift */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
+		C10000000000000000000007 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000021 /* MeetingRecorder.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D10000000000000000000001 /* MeetingRecorder */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E10000000000000000000006 /* Build configuration list for PBXNativeTarget "MeetingRecorder" */;
+			buildPhases = (
+				D10000000000000000000003 /* Sources */,
+				D10000000000000000000004 /* Frameworks */,
+				D10000000000000000000005 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MeetingRecorder;
+			productName = MeetingRecorder;
+			productReference = A10000000000000000000021 /* MeetingRecorder.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D10000000000000000000002 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				ORGANIZATIONNAME = MeetingRecorder;
+				TargetAttributes = {
+					D10000000000000000000001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = E10000000000000000000005 /* Build configuration list for PBXProject "MeetingRecorder" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = "zh-Hans";
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				"zh-Hans",
+				en,
+				Base,
+			);
+			mainGroup = C10000000000000000000001;
+			productRefGroup = C10000000000000000000007 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D10000000000000000000001 /* MeetingRecorder */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D10000000000000000000005 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B10000000000000000000020 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D10000000000000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B10000000000000000000011 /* AppMain.swift in Sources */,
+				B10000000000000000000012 /* StatusBarController.swift in Sources */,
+				B10000000000000000000013 /* PopoverView.swift in Sources */,
+				B10000000000000000000014 /* MeetingSession.swift in Sources */,
+				B10000000000000000000015 /* RecordingEngine.swift in Sources */,
+				B10000000000000000000016 /* SystemAudioCapture.swift in Sources */,
+				B10000000000000000000017 /* MicrophoneCapture.swift in Sources */,
+				B10000000000000000000018 /* PCMRingBuffer.swift in Sources */,
+				B10000000000000000000019 /* PCMConverter.swift in Sources */,
+				B1000000000000000000001A /* M4AWriter.swift in Sources */,
+				B1000000000000000000001B /* AudioMix.swift in Sources */,
+				B1000000000000000000001C /* PermissionCenter.swift in Sources */,
+				B1000000000000000000001D /* RecordingPaths.swift in Sources */,
+				B1000000000000000000001E /* RecorderError.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		E10000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_TREAT_WARNINGS_AS_ERRORS = NO;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = NO;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		E10000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_TREAT_WARNINGS_AS_ERRORS = NO;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				ONLY_ACTIVE_ARCH = NO;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = NO;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		E10000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGNING_REQUIRED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_PREVIEWS = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MeetingRecorder/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					AppKit,
+					"-framework",
+					SwiftUI,
+					"-framework",
+					AVFoundation,
+					"-framework",
+					ScreenCaptureKit,
+					"-framework",
+					CoreMedia,
+					"-framework",
+					CoreVideo,
+					"-framework",
+					AudioToolbox,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = local.meetingrecorder.app;
+				PRODUCT_NAME = MeetingRecorder;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		E10000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGNING_REQUIRED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_PREVIEWS = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MeetingRecorder/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					AppKit,
+					"-framework",
+					SwiftUI,
+					"-framework",
+					AVFoundation,
+					"-framework",
+					ScreenCaptureKit,
+					"-framework",
+					CoreMedia,
+					"-framework",
+					CoreVideo,
+					"-framework",
+					AudioToolbox,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = local.meetingrecorder.app;
+				PRODUCT_NAME = MeetingRecorder;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		E10000000000000000000005 /* Build configuration list for PBXProject "MeetingRecorder" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E10000000000000000000001 /* Debug */,
+				E10000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E10000000000000000000006 /* Build configuration list for PBXNativeTarget "MeetingRecorder" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E10000000000000000000003 /* Debug */,
+				E10000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D10000000000000000000002 /* Project object */;
+}

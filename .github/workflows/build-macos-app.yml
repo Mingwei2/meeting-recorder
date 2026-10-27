@@ -1,0 +1,49 @@
+name: Build macOS App
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+    branches:
+      - "**"
+
+concurrency:
+  group: meeting-recorder-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  app:
+    name: Apple Silicon app
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build and zip
+        run: bash scripts/build-app.sh
+
+      - name: Upload zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: MeetingRecorder-arm64
+          path: |
+            dist/MeetingRecorder-arm64.zip
+            dist/MeetingRecorder-arm64.zip.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            dist/MeetingRecorder-arm64.zip \
+            dist/MeetingRecorder-arm64.zip.sha256 \
+            --title "会议录音 ${GITHUB_REF_NAME}" \
+            --notes "Apple Silicon 菜单栏 App（ad-hoc 签名）。解压后先看「请先读我.txt」。麦克风 + 系统音频，本地 m4a，不上传。没有装 Xcode 也可以用。"

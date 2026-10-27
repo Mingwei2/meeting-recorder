@@ -1,0 +1,12 @@
+.DS_Store
+build/
+dist/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.moved-aside
+.swiftpm/
+.idea/
+agent-tools/
+*.wav
+*.m4a

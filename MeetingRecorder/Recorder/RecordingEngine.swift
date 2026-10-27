@@ -1,0 +1,197 @@
+import Foundation
+import os
+
+/// Mixes microphone + system audio on one timeline and writes a single m4a.
+final class RecordingEngine {
+    struct Levels: Sendable {
+        var microphone: Float
+        var system: Float
+        var systemFrames: Int
+    }
+
+    var onLevels: ((Levels) -> Void)?
+    var onNotice: ((String) -> Void)?
+    var onFatal: ((Error) -> Void)?
+
+    private let mixerQueue = DispatchQueue(label: "local.meetingrecorder.mixer", qos: .userInitiated)
+    private let microphone = MicrophoneCapture()
+    private let systemAudio = SystemAudioCapture()
+    private let microphoneRing = PCMRingBuffer(capacityFrames: 48_000 * 30)
+    private let systemRing = PCMRingBuffer(capacityFrames: 48_000 * 30)
+    private var writer: M4AWriter?
+    private var timer: DispatchSourceTimer?
+    private var startUptime: UInt64 = 0
+    private var writtenFrames: Int64 = 0
+    private var outputURL: URL?
+    private var stopped = false
+    private var fatalSent = false
+    private var lastLevelPublish: UInt64 = 0
+    private var warnedMissingSystemAudio = false
+    private let log = Logger(subsystem: "local.meetingrecorder.app", category: "engine")
+
+    private static let sampleRate: UInt64 = 48_000
+
+    func start(outputURL: URL) async throws {
+        self.outputURL = outputURL
+        let writer = try M4AWriter(url: outputURL)
+        self.writer = writer
+
+        microphone.onPCM = { [microphoneRing] buffer in
+            microphoneRing.write(nonInterleaved: buffer)
+        }
+        systemAudio.onPCM = { [systemRing] buffer in
+            systemRing.write(nonInterleaved: buffer)
+        }
+        systemAudio.onInterruption = { [weak self] error in
+            self?.fail(RecorderError.interrupted(RecorderError.message(from: error)))
+        }
+        microphone.onInterruption = { [weak self] error in
+            self?.fail(RecorderError.interrupted("麦克风中断：\(error.localizedDescription)"))
+        }
+
+        do {
+            try microphone.start()
+        } catch {
+            teardownCaptures()
+            self.writer = nil
+            try? FileManager.default.removeItem(at: outputURL)
+            throw error
+        }
+
+        do {
+            try await systemAudio.start()
+        } catch {
+            teardownCaptures()
+            self.writer = nil
+            try? FileManager.default.removeItem(at: outputURL)
+            throw error
+        }
+
+        startUptime = DispatchTime.now().uptimeNanoseconds
+        let timer = DispatchSource.makeTimerSource(queue: mixerQueue)
+        timer.schedule(deadline: .now() + .milliseconds(20), repeating: .milliseconds(20), leeway: .milliseconds(5))
+        timer.setEventHandler { [weak self] in
+            self?.pull()
+        }
+        self.timer = timer
+        timer.resume()
+    }
+
+    /// Idempotent. Returns the file URL when a writer was opened.
+    func stop() async -> URL? {
+        let shouldRun: Bool = mixerQueue.sync {
+            if stopped { return false }
+            stopped = true
+            timer?.cancel()
+            timer = nil
+            return true
+        }
+        guard shouldRun else { return outputURL }
+
+        microphone.onPCM = nil
+        systemAudio.onPCM = nil
+        microphone.onInterruption = nil
+        systemAudio.onInterruption = nil
+        await systemAudio.stop()
+        microphone.stop()
+
+        let url = outputURL
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            mixerQueue.async {
+                self.flushRemainder()
+                continuation.resume()
+            }
+        }
+        if let writer {
+            do {
+                try await writer.finish()
+            } catch {
+                log.error("Finish failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+        return url
+    }
+
+    private func teardownCaptures() {
+        microphone.onPCM = nil
+        microphone.onInterruption = nil
+        systemAudio.onPCM = nil
+        systemAudio.onInterruption = nil
+        microphone.stop()
+    }
+
+    private func fail(_ error: Error) {
+        mixerQueue.async {
+            guard !self.fatalSent else { return }
+            self.fatalSent = true
+            self.onFatal?(error)
+        }
+    }
+
+    /// During the first 700ms, wait until both sources have audio so the file
+    /// does not open with a pad of silence that permanently delays a late source.
+    /// After that, missing samples become silence and the file length follows the clock.
+    private func pull() {
+        guard !stopped, let writer else { return }
+        let now = DispatchTime.now().uptimeNanoseconds
+        let elapsed = now &- startUptime
+        let expected = Int64(elapsed * Self.sampleRate / 1_000_000_000)
+        var due = expected - writtenFrames
+        if due <= 0 { return }
+        // Catch up a little each tick. Samples already queued are real audio;
+        // a shortfall is silence on the wall clock, not a reason to delay the other source.
+        if due > 12_000 { due = 12_000 }
+        let frames = Int(due)
+
+        if !warnedMissingSystemAudio, elapsed > 2_000_000_000, systemRing.acceptedFrameCount == 0 {
+            warnedMissingSystemAudio = true
+            log.warning("No system-audio frames yet.")
+            onNotice?("还没有收到系统音频。请确认「屏幕录制」已允许，并且允许后完全退出并重新打开过本应用。微信需要正在出声。")
+        }
+
+        var mic = [Float](repeating: 0, count: frames * 2)
+        var system = [Float](repeating: 0, count: frames * 2)
+        mic.withUnsafeMutableBufferPointer { pointer in
+            _ = microphoneRing.readInterleaved(into: pointer.baseAddress!, frameCount: frames)
+        }
+        system.withUnsafeMutableBufferPointer { pointer in
+            _ = systemRing.readInterleaved(into: pointer.baseAddress!, frameCount: frames)
+        }
+
+        let mixed = AudioMix.mix(microphone: mic, system: system, frames: frames)
+        do {
+            try writer.append(interleaved: mixed.samples)
+            writtenFrames += Int64(frames)
+        } catch {
+            fail(error)
+            return
+        }
+
+        if now &- lastLevelPublish > 80_000_000 {
+            lastLevelPublish = now
+            let levels = Levels(
+                microphone: mixed.micPeak,
+                system: mixed.systemPeak,
+                systemFrames: systemRing.acceptedFrameCount
+            )
+            onLevels?(levels)
+        }
+    }
+
+    private func flushRemainder() {
+        guard let writer else { return }
+        let frames = min(max(microphoneRing.availableFrames, systemRing.availableFrames), 48_000 * 3)
+        guard frames > 0 else { return }
+        var mic = [Float](repeating: 0, count: frames * 2)
+        var system = [Float](repeating: 0, count: frames * 2)
+        mic.withUnsafeMutableBufferPointer { pointer in
+            _ = microphoneRing.readInterleaved(into: pointer.baseAddress!, frameCount: frames)
+        }
+        system.withUnsafeMutableBufferPointer { pointer in
+            _ = systemRing.readInterleaved(into: pointer.baseAddress!, frameCount: frames)
+        }
+        let mixed = AudioMix.mix(microphone: mic, system: system, frames: frames)
+        try? writer.append(interleaved: mixed.samples)
+        writtenFrames += Int64(frames)
+    }
+}
