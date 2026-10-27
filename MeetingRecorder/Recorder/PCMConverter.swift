@@ -29,7 +29,7 @@ final class PCMConverter {
             guard let created = AVAudioConverter(from: source, to: target) else {
                 return nil
             }
-            created.sampleRateConverterQuality = .high
+            created.sampleRateConverterQuality = AVAudioQuality.high.rawValue
             converter = created
             sourceFormat = source
         }

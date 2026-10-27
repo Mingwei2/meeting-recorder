@@ -179,8 +179,8 @@ final class SystemAudioCapture: NSObject, SCStreamOutput, SCStreamDelegate {
             return nil
         }
         let samples = CMSampleBufferGetNumSamples(sampleBuffer)
+        let format = AVAudioFormat(cmAudioFormatDescription: formatDescription)
         guard samples > 0,
-              let format = AVAudioFormat(cmAudioFormatDescription: formatDescription),
               let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(samples))
         else {
             return nil

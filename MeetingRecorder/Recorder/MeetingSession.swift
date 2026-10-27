@@ -172,7 +172,7 @@ final class MeetingSession: ObservableObject {
     private func runStop(clearBanner: Bool) async {
         let engine = self.engine
         self.engine = nil
-        if engine == nil {
+        guard let engine else {
             phase = .idle
             startedAt = nil
             stopRequested = false
