@@ -4,15 +4,17 @@ import SwiftUI
 final class StatusBarController: NSObject {
     private let session: MeetingSession
     private let permissions: PermissionCenter
+    private let preferences: CapturePreferences
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let popover = NSPopover()
     private var timer: Timer?
     private let idleImage: NSImage
     private let recordingImage: NSImage
 
-    init(session: MeetingSession, permissions: PermissionCenter) {
+    init(session: MeetingSession, permissions: PermissionCenter, preferences: CapturePreferences) {
         self.session = session
         self.permissions = permissions
+        self.preferences = preferences
         idleImage = Self.makeIdleImage()
         recordingImage = Self.makeRecordingImage()
         super.init()
@@ -25,7 +27,7 @@ final class StatusBarController: NSObject {
         button.action = #selector(togglePopover(_:))
         button.font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium)
 
-        let host = NSHostingController(rootView: PopoverView(session: session, permissions: permissions))
+        let host = NSHostingController(rootView: PopoverView(session: session, permissions: permissions, preferences: preferences))
         host.sizingOptions = [.preferredContentSize]
         popover.contentViewController = host
         popover.behavior = .transient
@@ -65,6 +67,7 @@ final class StatusBarController: NSObject {
     private func openPopover() {
         guard let button = statusItem.button else { return }
         permissions.refresh()
+        preferences.refreshRunningApplications()
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         popover.contentViewController?.view.window?.makeKey()
         if #available(macOS 14.0, *) {

@@ -21,13 +21,15 @@ final class MeetingSession: ObservableObject {
     var onChange: (() -> Void)?
 
     private let permissions: PermissionCenter
+    private let preferences: CapturePreferences
     private var engine: RecordingEngine?
     private var chain: Task<Void, Never>?
     private var stopRequested = false
     private var startedAt: Date?
 
-    init(permissions: PermissionCenter) {
+    init(permissions: PermissionCenter, preferences: CapturePreferences) {
         self.permissions = permissions
+        self.preferences = preferences
     }
 
     var isBusy: Bool {
@@ -61,6 +63,11 @@ final class MeetingSession: ObservableObject {
     func toggle() {
         switch phase {
         case .idle:
+            if let message = preferences.startRefusalMessage() {
+                banner = message
+                onChange?()
+                return
+            }
             enqueueStart()
         case .starting, .recording:
             enqueueStop()
@@ -107,6 +114,13 @@ final class MeetingSession: ObservableObject {
 
     private func runStart() async {
         guard !stopRequested else { return }
+        if let message = preferences.startRefusalMessage() {
+            banner = message
+            phase = .idle
+            onChange?()
+            return
+        }
+        let target = preferences.makeTarget()
         banner = nil
         phase = .starting
         elapsed = 0
@@ -136,8 +150,14 @@ final class MeetingSession: ObservableObject {
             }
             engine.onNotice = { [weak self] text in
                 Task { @MainActor in
-                    guard let self, self.banner == nil else { return }
-                    self.banner = text
+                    guard let self else { return }
+                    if text.contains("还没有收到系统音频"),
+                       let banner = self.banner,
+                       banner.contains("已跳过") {
+                        self.banner = banner + "\n" + text
+                    } else {
+                        self.banner = text
+                    }
                     self.onChange?()
                 }
             }
@@ -147,7 +167,7 @@ final class MeetingSession: ObservableObject {
                     self?.enqueueStop()
                 }
             }
-            try await engine.start(outputURL: url)
+            try await engine.start(outputURL: url, target: target)
             if stopRequested {
                 _ = await engine.stop()
                 remember(url)

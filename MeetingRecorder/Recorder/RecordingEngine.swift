@@ -31,10 +31,8 @@ final class RecordingEngine {
 
     private static let sampleRate: UInt64 = 48_000
 
-    func start(outputURL: URL) async throws {
+    func start(outputURL: URL, target: SystemAudioTarget) async throws {
         self.outputURL = outputURL
-        let writer = try M4AWriter(url: outputURL)
-        self.writer = writer
 
         microphone.onPCM = { [microphoneRing] buffer in
             microphoneRing.write(nonInterleaved: buffer)
@@ -50,21 +48,45 @@ final class RecordingEngine {
         }
 
         do {
-            try microphone.start()
+            try await systemAudio.validate(target)
         } catch {
-            teardownCaptures()
-            self.writer = nil
-            try? FileManager.default.removeItem(at: outputURL)
+            clearCaptureCallbacks()
+            systemAudio.cancelValidation()
+            self.outputURL = nil
             throw error
         }
 
         do {
-            try await systemAudio.start()
+            let writer = try M4AWriter(url: outputURL)
+            self.writer = writer
         } catch {
-            teardownCaptures()
-            self.writer = nil
-            try? FileManager.default.removeItem(at: outputURL)
+            await abandonPreparedCapture(removeFileAt: outputURL, stopMicrophone: false)
             throw error
+        }
+
+        do {
+            try microphone.start()
+        } catch {
+            let stopMicrophone: Bool
+            if case RecorderError.noMicrophoneDevice = error {
+                stopMicrophone = false
+            } else {
+                stopMicrophone = true
+            }
+            await abandonPreparedCapture(removeFileAt: outputURL, stopMicrophone: stopMicrophone)
+            throw error
+        }
+
+        let report: SystemAudioStartReport
+        do {
+            report = try await systemAudio.startValidated()
+        } catch {
+            await abandonPreparedCapture(removeFileAt: outputURL, stopMicrophone: true)
+            throw error
+        }
+
+        if !report.skippedNames.isEmpty {
+            onNotice?(RecorderError.skippedApplicationsNotice(report.skippedNames))
         }
 
         startUptime = DispatchTime.now().uptimeNanoseconds
@@ -112,12 +134,24 @@ final class RecordingEngine {
         return url
     }
 
-    private func teardownCaptures() {
+    private func clearCaptureCallbacks() {
         microphone.onPCM = nil
         microphone.onInterruption = nil
         systemAudio.onPCM = nil
         systemAudio.onInterruption = nil
-        microphone.stop()
+    }
+
+    /// Drops a prepared or just-started capture when writer, mic, or the stream fails.
+    private func abandonPreparedCapture(removeFileAt url: URL, stopMicrophone: Bool) async {
+        clearCaptureCallbacks()
+        systemAudio.cancelValidation()
+        await systemAudio.stop()
+        if stopMicrophone {
+            microphone.stop()
+        }
+        writer = nil
+        try? FileManager.default.removeItem(at: url)
+        outputURL = nil
     }
 
     private func fail(_ error: Error) {
@@ -146,7 +180,7 @@ final class RecordingEngine {
         if !warnedMissingSystemAudio, elapsed > 2_000_000_000, systemRing.acceptedFrameCount == 0 {
             warnedMissingSystemAudio = true
             log.warning("No system-audio frames yet.")
-            onNotice?("还没有收到系统音频。请确认「屏幕录制」已允许，并且允许后完全退出并重新打开过本应用。微信需要正在出声。")
+            onNotice?("还没有收到系统音频。请确认「屏幕录制」已允许，并且允许后完全退出并重新打开过本应用。所选应用需要正在出声。")
         }
 
         var mic = [Float](repeating: 0, count: frames * 2)
