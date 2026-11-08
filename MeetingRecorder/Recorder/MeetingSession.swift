@@ -16,7 +16,9 @@ final class MeetingSession: ObservableObject {
     @Published private(set) var systemLevel: Float = 0
     @Published private(set) var banner: String?
     @Published private(set) var savedSummary: String?
-    @Published private(set) var lastFile: URL?
+    @Published private(set) var lastFiles: [URL] = []
+
+    var lastFile: URL? { lastFiles.first }
 
     var onChange: (() -> Void)?
 
@@ -169,8 +171,7 @@ final class MeetingSession: ObservableObject {
             }
             try await engine.start(outputURL: url, target: target)
             if stopRequested {
-                _ = await engine.stop()
-                remember(url)
+                remember(await engine.stop())
                 phase = .idle
                 onChange?()
                 return
@@ -201,8 +202,7 @@ final class MeetingSession: ObservableObject {
         }
         phase = .stopping
         onChange?()
-        let url = await engine.stop()
-        remember(url)
+        remember(await engine.stop())
         phase = .idle
         startedAt = nil
         elapsed = 0
@@ -233,10 +233,14 @@ final class MeetingSession: ObservableObject {
         }
     }
 
-    private func remember(_ url: URL?) {
-        guard let url, FileManager.default.fileExists(atPath: url.path) else { return }
-        lastFile = url
-        if let size = RecordingPaths.fileSize(at: url) {
+    private func remember(_ urls: [URL]) {
+        let files = urls.filter { FileManager.default.fileExists(atPath: $0.path) }
+        guard let url = files.first else { return }
+        lastFiles = files
+        if files.count > 1 {
+            let size = files.compactMap { RecordingPaths.fileSize(at: $0) }.reduce(0, +)
+            savedSummary = "已保存 \(files.count) 段 · 共 \(RecordingPaths.format(byteCount: size)) · 每段小于 25 MB"
+        } else if let size = RecordingPaths.fileSize(at: url) {
             savedSummary = "已保存 \(url.lastPathComponent) · \(RecordingPaths.format(byteCount: size))"
         } else {
             savedSummary = "已保存 \(url.lastPathComponent)"

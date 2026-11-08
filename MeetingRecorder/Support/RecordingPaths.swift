@@ -46,10 +46,15 @@ enum RecordingPaths {
     }
 
     static func reveal(_ url: URL) {
-        guard FileManager.default.fileExists(atPath: url.path) else {
+        reveal([url])
+    }
+
+    static func reveal(_ urls: [URL]) {
+        let files = urls.filter { FileManager.default.fileExists(atPath: $0.path) }
+        guard !files.isEmpty else {
             openFolder()
             return
         }
-        NSWorkspace.shared.activateFileViewerSelecting([url])
+        NSWorkspace.shared.activateFileViewerSelecting(files)
     }
 }

@@ -192,7 +192,7 @@ struct PopoverView: View {
 
     private func recentRecording(_ url: URL) -> some View {
         Button {
-            RecordingPaths.reveal(url)
+            RecordingPaths.reveal(session.lastFiles)
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: "waveform")
@@ -200,7 +200,7 @@ struct PopoverView: View {
                     .foregroundStyle(.secondary)
                     .frame(width: 28)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("最近录音")
+                    Text(session.lastFiles.count > 1 ? "最近录音 · \(session.lastFiles.count) 段" : "最近录音")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(.primary)
                     Text(url.lastPathComponent)

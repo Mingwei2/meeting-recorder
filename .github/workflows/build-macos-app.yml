@@ -27,6 +27,9 @@ jobs:
       - name: Check permission request flow
         run: bash scripts/check-permissions.sh
 
+      - name: Check audio encoding and automatic splitting
+        run: bash scripts/check-audio.sh
+
       - name: Build and zip
         run: bash scripts/build-app.sh
 

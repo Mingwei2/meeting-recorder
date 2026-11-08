@@ -1,7 +1,7 @@
 import Foundation
 import os
 
-/// Mixes microphone + system audio on one timeline and writes a single m4a.
+/// Mixes microphone + system audio on one timeline, automatically splitting large recordings.
 final class RecordingEngine {
     struct Levels: Sendable {
         var microphone: Float
@@ -99,8 +99,8 @@ final class RecordingEngine {
         timer.resume()
     }
 
-    /// Idempotent. Returns the file URL when a writer was opened.
-    func stop() async -> URL? {
+    /// Returns successfully finalized parts in chronological order.
+    func stop() async -> [URL] {
         let shouldRun: Bool = mixerQueue.sync {
             if stopped { return false }
             stopped = true
@@ -108,7 +108,7 @@ final class RecordingEngine {
             timer = nil
             return true
         }
-        guard shouldRun else { return outputURL }
+        guard shouldRun else { return writer?.completedURLs ?? [] }
 
         microphone.onPCM = nil
         systemAudio.onPCM = nil
@@ -117,21 +117,26 @@ final class RecordingEngine {
         await systemAudio.stop()
         microphone.stop()
 
-        let url = outputURL
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+        let flushError = await withCheckedContinuation { (continuation: CheckedContinuation<Error?, Never>) in
             mixerQueue.async {
-                self.flushRemainder()
-                continuation.resume()
+                do {
+                    try self.flushRemainder()
+                    continuation.resume(returning: nil)
+                } catch {
+                    continuation.resume(returning: error)
+                }
             }
         }
+        if let flushError { onNotice?(RecorderError.message(from: flushError)) }
         if let writer {
             do {
                 try await writer.finish()
             } catch {
                 log.error("Finish failed: \(error.localizedDescription, privacy: .public)")
+                onNotice?(RecorderError.message(from: error))
             }
         }
-        return url
+        return writer?.completedURLs ?? []
     }
 
     private func clearCaptureCallbacks() {
@@ -149,8 +154,10 @@ final class RecordingEngine {
         if stopMicrophone {
             microphone.stop()
         }
-        writer = nil
-        try? FileManager.default.removeItem(at: url)
+        if writer != nil {
+            writer = nil
+            try? FileManager.default.removeItem(at: url)
+        }
         outputURL = nil
     }
 
@@ -212,7 +219,7 @@ final class RecordingEngine {
         }
     }
 
-    private func flushRemainder() {
+    private func flushRemainder() throws {
         guard let writer else { return }
         let frames = min(max(microphoneRing.availableFrames, systemRing.availableFrames), 48_000 * 3)
         guard frames > 0 else { return }
@@ -225,7 +232,7 @@ final class RecordingEngine {
             _ = systemRing.readInterleaved(into: pointer.baseAddress!, frameCount: frames)
         }
         let mixed = AudioMix.mix(microphone: mic, system: system, frames: frames)
-        try? writer.append(interleaved: mixed.samples)
+        try writer.append(interleaved: mixed.samples)
         writtenFrames += Int64(frames)
     }
 }
