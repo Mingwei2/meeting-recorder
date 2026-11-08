@@ -234,6 +234,7 @@ final class CapturePreferences: ObservableObject {
     }
 
     func refreshRunningApplications() {
+        guard !isRefreshing else { return }
         refreshGeneration += 1
         let generation = refreshGeneration
         isRefreshing = true
@@ -245,7 +246,7 @@ final class CapturePreferences: ObservableObject {
                 note = nil
             } catch {
                 loaded = []
-                note = "还不能列出正在运行的应用。请先允许屏幕录制，完全退出并重新打开本应用。下面的常用应用仍可预先勾选。"
+                note = "暂时无法读取应用列表。请确认屏幕录制权限已对当前版本生效，然后完全退出并重新打开本应用。"
             }
             guard generation == self.refreshGeneration else { return }
             var names: [String: String] = [:]

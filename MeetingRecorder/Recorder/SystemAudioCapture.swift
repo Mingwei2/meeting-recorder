@@ -256,7 +256,13 @@ final class SystemAudioCapture: NSObject, SCStreamOutput, SCStreamDelegate {
     }
 
     private static func loadShareableContent() async throws -> SCShareableContent {
-        try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
+        // Enumerating shareable content can itself present macOS consent UI.
+        // Opening or refreshing our popover must only check authorization;
+        // PermissionCenter requests it after an explicit user action.
+        guard CGPreflightScreenCaptureAccess() else {
+            throw RecorderError.screenCaptureDenied
+        }
+        return try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
     }
 
     private func map(_ error: Error) -> Error {

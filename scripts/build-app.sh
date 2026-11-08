@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build MeetingRecorder.app for Apple Silicon and zip it.
-# Run this on a Mac with Xcode (GitHub Actions macos-latest). Not on the user's Mac.
+# Run this on a Mac with Xcode (locally or on GitHub Actions macos-latest).
 
 set -euo pipefail
 
@@ -9,6 +9,22 @@ DERIVED="$ROOT/build"
 DIST="$ROOT/dist"
 STAGE="$DIST/MeetingRecorder-arm64"
 APP_NAME="MeetingRecorder.app"
+
+# Local builds may pin a certificate so TCC recognizes subsequent updates.
+# CI keeps ad-hoc signing by default. Never silently fall back to a different
+# identity if a configured certificate cannot sign the build.
+SIGNING_CONFIG="$HOME/.config/meeting-recorder/signing-identity"
+if [[ -n "${MEETING_RECORDER_SIGNING_IDENTITY:-}" ]]; then
+  SIGNING_IDENTITY="$MEETING_RECORDER_SIGNING_IDENTITY"
+elif [[ -f "$SIGNING_CONFIG" ]]; then
+  SIGNING_IDENTITY="$(cat "$SIGNING_CONFIG")"
+else
+  SIGNING_IDENTITY="-"
+fi
+if [[ -z "$SIGNING_IDENTITY" ]]; then
+  echo "Signing identity is empty: $SIGNING_CONFIG" >&2
+  exit 1
+fi
 
 cd "$ROOT"
 
@@ -25,7 +41,7 @@ build() {
     ARCHS=arm64 \
     ONLY_ACTIVE_ARCH=NO \
     CODE_SIGN_STYLE=Manual \
-    "CODE_SIGN_IDENTITY=-" \
+    "CODE_SIGN_IDENTITY=$SIGNING_IDENTITY" \
     CODE_SIGNING_REQUIRED=NO \
     CODE_SIGNING_ALLOWED=YES \
     DEVELOPMENT_TEAM= \
@@ -34,7 +50,7 @@ build() {
 }
 
 if ! build; then
-  echo "Signed build failed; retrying without signing, then ad-hoc signing the product."
+  echo "Signed build failed; retrying compilation without signing, then signing with the configured identity."
   xcodebuild \
     -project "$ROOT/MeetingRecorder.xcodeproj" \
     -scheme MeetingRecorder \
@@ -58,9 +74,8 @@ if [[ -z "${APP:-}" || ! -d "$APP" ]]; then
   exit 1
 fi
 
-# Ad-hoc signature. TCC (microphone + screen recording) will not stick on a fully unsigned binary.
-# Each new signature changes the cdhash, so a freshly downloaded zip must be granted permissions again.
-codesign --force --deep --sign - "$APP"
+# Keep the selected identity during packaging as well as compilation.
+codesign --force --deep --sign "$SIGNING_IDENTITY" "$APP"
 codesign --verify --deep --strict --verbose=2 "$APP"
 
 BIN="$APP/Contents/MacOS/MeetingRecorder"

@@ -20,13 +20,25 @@ final class PermissionCenter: ObservableObject {
     @Published private(set) var microphone: State = .unknown
     @Published private(set) var screenGranted = false
 
+    private let screenAccessPreflight: () -> Bool
+    private let screenAccessRequest: () -> Bool
+    private var hasRequestedScreenCapture = false
+
+    init(
+        screenAccessPreflight: @escaping () -> Bool = { CGPreflightScreenCaptureAccess() },
+        screenAccessRequest: @escaping () -> Bool = { CGRequestScreenCaptureAccess() }
+    ) {
+        self.screenAccessPreflight = screenAccessPreflight
+        self.screenAccessRequest = screenAccessRequest
+    }
+
     var isReady: Bool {
         microphone == .granted && screenGranted
     }
 
     func refresh() {
         microphone = Self.microphoneState()
-        screenGranted = CGPreflightScreenCaptureAccess()
+        screenGranted = screenAccessPreflight()
     }
 
     func requestMicrophone() async -> Bool {
@@ -52,7 +64,13 @@ final class PermissionCenter: ObservableObject {
     /// not take effect until the process is relaunched.
     @discardableResult
     func requestScreenCapture() -> Bool {
-        let granted = CGRequestScreenCaptureAccess()
+        refresh()
+        guard !screenGranted else { return true }
+        // A failed request needs System Settings (and often a relaunch), not
+        // another consent dialog every time the user clicks Start or Allow.
+        guard !hasRequestedScreenCapture else { return false }
+        hasRequestedScreenCapture = true
+        let granted = screenAccessRequest()
         refresh()
         return granted
     }
