@@ -102,7 +102,9 @@ final class StatusBarController: NSObject {
     ]
 
     private static func makeIdleImage() -> NSImage {
-        let image = NSImage(systemSymbolName: "mic", accessibilityDescription: "会议录音") ?? NSImage()
+        let configuration = NSImage.SymbolConfiguration(pointSize: 16, weight: .medium)
+        let image = NSImage(systemSymbolName: "waveform", accessibilityDescription: "会议录音")?
+            .withSymbolConfiguration(configuration) ?? NSImage()
         image.isTemplate = true
         return image
     }
